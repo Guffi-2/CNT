@@ -1,3 +1,5 @@
+import sqlite3
+
 import flet as ft
 import sqlite3 as sq
 
@@ -5,23 +7,97 @@ with sq.connect("users.db") as con:
     cur = con.cursor()
 
     cur.execute("""CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    id_space INTEGER NOT NULL,
-    dolg INTEGER NOT NULL,
-    chlenskie_vznos_nachislenno INTEGER NOT NULL,
-    celevie_vznosi_nachislenno INTEGER NOT NULL,
-    chlenskie_vznos_oplacheno INTEGER NOT NULL,
-    celevie_vznosi_oplacheno INTEGER NOT NULL,
-    itog_nachislenno INTEGER NOT NULL,
-    itog_oplacheno INTEGER NOT NULL
-    )""")
+        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        first_name TEXT NOT NULL,
+        middle_name TEXT,
+        last_name TEXT NOT NULL,
+        id_space INTEGER NOT NULL,
+        dolg INTEGER NOT NULL,
+        chlenskie_vznos_nachislenno INTEGER NOT NULL,
+        celevie_vznosi_nachislenno INTEGER NOT NULL,
+        chlenskie_vznos_oplacheno INTEGER NOT NULL,
+        celevie_vznosi_oplacheno INTEGER NOT NULL,
+        itog_nachislenno INTEGER NOT NULL,
+        itog_oplacheno INTEGER NOT NULL
+        )""")
+def get_persona_name():
+    with sq.connect("users.db") as con:
+        cur = con.cursor()
+        res = cur.execute("SELECT first_name FROM users")
+
+        name = res.fetchall()
+
+        return name
+
+
+
+def get_id():
+    with sq.connect("users.db") as con:
+        cur = con.cursor()
+        res = cur.execute("SELECT first_name FROM users")
+        all_names = res.fetchall()
+        lennn = len(all_names)
+
+    def nopon(pon):
+        with sq.connect("users.db") as con:
+            cur = con.cursor()
+            query = "SELECT first_name FROM users LIMIT 1 OFFSET ?"
+            res = cur.execute(query, (pon - 1,))
+            name = res.fetchone()
+            if name:
+                return name[0]
+            return None
+
+    name = []  # Определяем переменную вне цикла -w-
+    for i in range(1, lennn):
+        temp = nopon(i)
+        name.append(temp)
+        if temp:
+            print(f"{temp}")
+
+    return name
+
+
+
+
+def get_persona_familiya():
+    with sq.connect("users.db") as con:
+        cur = con.cursor()
+
+        res2 = cur.execute("SELECT middle_name FROM users")
+
+        familiya = res2.fetchall()
+
+        return familiya
+
+
+def get_persona_otchestvo():
+    with sq.connect("users.db") as con:
+        cur = con.cursor()
+
+        res3 = cur.execute("SELECT last_name FROM users")
+
+
+
+        otchestvo = res3.fetchall()
+
+        print(len(otchestvo))
+
+
+        return otchestvo
 
 def new_persona(name, familiya, ochestwo):
     with sq.connect("users.db") as con:
         cur = con.cursor()
 
-        cur.execute(f'INSERT INTO users (name, id_space, dolg, chlenskie_vznos_nachislenno,  celevie_vznosi_nachislenno,  chlenskie_vznos_oplacheno, celevie_vznosi_oplacheno,  itog_nachislenno, itog_oplacheno) VALUES("{str(name)} {str(familiya)} {str(ochestwo)}", 0000,  0, 0 , 0, 0 , 0 , 0, 0)')
+        cur.execute(
+            f'INSERT INTO users (first_name, middle_name, last_name, id_space, dolg, chlenskie_vznos_nachislenno, celevie_vznosi_nachislenno, chlenskie_vznos_oplacheno, celevie_vznosi_oplacheno, itog_nachislenno, itog_oplacheno) VALUES("{str(name)}", "{str(familiya)}", "{str(ochestwo)}", 0, 0, 0, 0, 0, 0, 0, 0)')
+
+def get_num_of_space():
+    with sq.connect("users.db") as con:
+        cur = con.cursor()
+
+        cur.execute(f'INSERT INTO users (name, id_space, dolg, chlenskie_vznos_nachislenno,  celevie_vznosi_nachislenno,  chlenskie_vznos_oplacheno, celevie_vznosi_oplacheno,  itog_nachislenno, itog_oplacheno) VALUES("", 0000,  0, 0 , 0, 0 , 0 , 0, 0)')
 
 def main(page: ft.Page):
     page.title = "СНТ Лаунчер"
@@ -54,16 +130,24 @@ def main(page: ft.Page):
     persona_familiya = ft.TextField(label="Фамилия")
     persona_ochestvo = ft.TextField(label="Очество")
 
-    p_n = persona_name.value
-    p_f = persona_familiya.value
-    p_o = persona_ochestvo.value
-
     def close_dlg2(e):
         dlg_modal2.open = False
         page.update()
 
     def add_per_dlg(e):
-        ponmega
+        p_n = persona_name.value
+        p_f = persona_familiya.value
+        p_o = persona_ochestvo.value
+
+        g_p_n = get_id()
+        #g_p_f = get_persona_familiya()
+        #g_p_o = get_persona_otchestvo()
+
+        new_persona(p_n, p_f, p_o)
+        new_card(p_n, p_f, p_o)
+        upload_card(g_p_n) #, g_p_f, g_p_o
+        dlg_modal2.open = False
+        page.update()
 
 
     dlg_modal2 = ft.AlertDialog(
@@ -76,7 +160,7 @@ def main(page: ft.Page):
             persona_familiya,
             ft.Text(" "),
             persona_ochestvo,
-            ft.Text(" "),
+            ft.Text(""),
             ft.ElevatedButton(text="Добавить", on_click=add_per_dlg),
             ft.Text(" "),
             ft.ElevatedButton(text="Отмена", on_click=close_dlg2, autofocus=True)
@@ -85,21 +169,10 @@ def main(page: ft.Page):
         on_dismiss=lambda e: print("Modal dialog dismissed!"),
     )
 
-
     def open_dlg_modal_new_persona(e):
         page.dialog = dlg_modal2
         dlg_modal2.open = True
         page.update()
-
-    def ponmega():
-        if p_n == '' or p_n == ' ' or p_o == '' or p_o == ' ' or p_f == '' or p_f == ' ':
-            page.show_snack_bar(
-                ft.SnackBar(ft.Text("Одна из строк не заполнена!"), open=False)
-            )
-        else:
-            dlg_modal2.open = False
-            page.update()
-
 
     page.count = 0
 
@@ -179,10 +252,39 @@ def main(page: ft.Page):
         txt_number.value = str(int(txt_number.value) + 1)
         page.update()
 
-    def megapon(e):
-        open_dlg_modal_new_persona(e)
-        #cur.execute('INSERT INTO users (name, id_space, dolg, chlenskie_vznos_nachislenno,  celevie_vznosi_nachislenno,  chlenskie_vznos_oplacheno, celevie_vznosi_oplacheno,  itog_nachislenno, itog_oplacheno) VALUES("Иван Иванович Иванов", 0000,  0, 0 , 0, 0 , 0 , 0, 0)')
-        """
+    def upload_card(name): # , famil, ochestvo
+        print(get_id())
+        try:
+            for i in range(1, len(get_id())):
+                cl.controls.append(
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column(
+                                [
+                                    ft.ListTile(
+                                        leading=ft.Icon(ft.icons.HOME_ROUNDED),
+                                        title=ft.Text(f"The Enchanted Nightingale"),
+                                        subtitle=ft.Text(
+                                            f"{name}" # , famil, ochestvo
+                                        ),
+                                    ),
+                                    ft.Row(
+                                        [ft.TextButton("Открыть", on_click=lambda _: page.go("/pon"))],
+                                        alignment=ft.MainAxisAlignment.END,
+                                    ),
+                                ]
+                            ),
+                            width=400,
+                            height=130,
+                            padding=10,
+                        )
+                    )
+                )
+                page.update()
+        except:
+            print("Error: upload_card")
+
+    def new_card(name, famil, ochestvo):
         cl.controls.append(
             ft.Card(
                 content=ft.Container(
@@ -190,9 +292,9 @@ def main(page: ft.Page):
                         [
                             ft.ListTile(
                                 leading=ft.Icon(ft.icons.HOME_ROUNDED),
-                                title=ft.Text("The Enchanted Nightingale"),
+                                title=ft.Text(f"The Enchanted Nightingale"),
                                 subtitle=ft.Text(
-                                    "Music by Julie Gable. Lyrics by Sidney Stein."
+                                    f"{name, famil, ochestvo}"
                                 ),
                             ),
                             ft.Row(
@@ -208,7 +310,11 @@ def main(page: ft.Page):
             )
         )
         page.update()
-        """
+
+    def megapon(e):
+        open_dlg_modal_new_persona(e)
+        #cur.execute('INSERT INTO users (name, id_space, dolg, chlenskie_vznos_nachislenno,  celevie_vznosi_nachislenno,  chlenskie_vznos_oplacheno, celevie_vznosi_oplacheno,  itog_nachislenno, itog_oplacheno) VALUES("Иван Иванович Иванов", 0000,  0, 0 , 0, 0 , 0 , 0, 0)')
+
 
     ponbtn = ft.FloatingActionButton(
         icon=ft.icons.ADD, on_click=megapon, bgcolor=ft.colors.LIME_300
